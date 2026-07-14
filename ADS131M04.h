@@ -199,37 +199,21 @@ typedef enum {
 	ADS131M04_ERR_PARAM
 } ADS131M04_err_t;
 
-/* ************************ */
-/* Driver: host abstraction */
-/* ************************ */
-// To avoid STM32-specific code here, we pass function pointers to the relevant GPIO and SPI functions
-// To avoid globals, SPI and GPIO information are contained in ctx struct that the driver never looks inside but passes along
-typedef struct {
-	// full-duplex blocking exchange of `len` bytes; returns 0 on success.
-	int  (*spi_transfer)(void *ctx, const uint8_t *tx, uint8_t *rx, uint16_t len);
-	// assert=true to drive CS LOW
-	void (*cs)(void *ctx, bool assert);
-	// wait at least `us` microseconds
-	void (*delay_us)(void *ctx, uint32_t us);
-	// drives SYNC/RESET, level=true is HIGH.
-	void (*reset_pin)(void *ctx, bool level); // optional, may be NULL, fallback to RESET command
-	void *ctx;
-} ADS131M04_hal_t;
-
-/* *********************** */
-/* Driver: handle and data */
-/* *********************** */
-typedef struct {
-	ADS131M04_hal_t hal;
-	uint32_t f_clkin_hz;    // oscillator frequency on the analog board, e.g. 2048000
-	uint16_t last_response; // word 0 of the most recent frame
-} ADS131M04_t;
-
+/* ******************** */
+/* Driver: data struct  */
+/* ******************** */
 typedef struct {
 	int32_t  ch[ADS131M04_NUM_CHANNELS]; // sign-extended 24-bit samples
 	uint16_t status;                     // STATUS contents that headed this frame
 	bool     crc_ok;                     // device output CRC matched our recompute
 } ADS131M04_data_t;
+
+/* ************ */
+/* Driver: API  */
+/* ************ */
+// Reset via SYNC/RESET pin, confirm response is 0xFF24 and CHANCNT==4,
+// then write MODE = ADS131M04_MODE_INIT (return to defaults and clear the reset flag)
+ADS131M04_err_t ADS131M04_reset(void);
 
 #ifdef __cplusplus
 }
