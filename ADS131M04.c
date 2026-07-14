@@ -64,3 +64,52 @@ ADS131M04_err_t ADS131M04_reset(void)
 
 	return ADS131M04_OK;
 }
+
+/* *************** */
+/* Register access */
+/* *************** */
+ADS131M04_err_t ADS1341M04_read_reg(uint8_t addr, uint16_t *val)
+{
+	uint8_t rx[ADS131M04_FRAME_BYTES];
+	ADS131M04_err_t e;
+
+	if (addr > 0x3Fu || !val)
+		return ADS131M04_ERR_PARAM;
+
+	// Frame N: request. Frame N+1: register value.
+	if ((e = exchange_frame(ADS131M04_CMD_RREG(addr), 0, rx)) != ADS131M04_OK)
+		return e;
+	if ((e = exchange_frame(ADS131M04_CMD_NULL, 0, rx)) != ADS131M04_OK)
+		return e;
+
+	*val = s_last_response;
+	return ADS131M04_OK;
+}
+
+ADS131M04_err_t ADS1341M04_write_reg(uint8_t addr, uint16_t val)
+{
+	uint8_t rx[ADS131M04_FRAME_BYTES];
+	ADS131M04_err_t e;
+
+	if (addr > 0x3Fu)
+		return ADS131M04_ERR_PARAM;
+
+	// Command + payload packaged in the same frame
+	// Response (01a_aaaa_a000_0000) arrives in the next frame
+	if ((e = exchange_frame(ADS131M04_CMD_WREG(addr), &val, rx)) != ADS131M04_OK)
+		return e;
+	if ((e = exchange_frame(ADS131M04_CMD_NULL, 0, rx)) != ADS131M04_OK)
+		return e;
+
+	return (s_last_response == ADS131M04_RESP_WREG(addr)) ? ADS131M04_OK : ADS131M04_ERR_VERIFY;
+}
+
+ADS131M04_err_t ADS131M04_write_reg_verify(uint8_t addr, uint16_t val)
+{
+	uint16_t rb;
+	ads131m04_err_t e;
+
+	if ((e = ADS131M04_write_reg(addr, val)) != ADS131M04_OK) return e;
+	if ((e = ADS131M04_read_reg(addr, &rb))  != ADS131M04_OK) return e;
+	return (rb == val) ? ADS131M04_OK : ADS131M04_ERR_VERIFY;
+}

@@ -215,6 +215,14 @@ typedef struct {
 // then write MODE = ADS131M04_MODE_INIT (return to defaults and clear the reset flag)
 ADS131M04_err_t ADS131M04_reset(void);
 
+// Single-register access
+// Each is a two-frame exchange: command, then NULL to collect the response.
+ADS131M04_err_t ADS131M04_read_reg(uint8_t addr, uint16_t *val);
+// write_reg checks the 010a_aaaa_a000_0000 response
+ADS131M04_err_t ADS131M04_write_reg(uint8_t addr, uint16_t val);
+// write_reg_verify also reads the register back and compares
+ADS131M04_err_t ADS131M04_write_reg_verify(uint8_t addr, uint16_t val);
+
 #ifdef __cplusplus
 }
 #endif
