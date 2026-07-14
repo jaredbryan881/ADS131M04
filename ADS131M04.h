@@ -33,7 +33,7 @@ extern "C" {
 #define ADS131M04_RESP_UNLOCK     0x0655u
 // RREG: 101a_aaaa_annn_nnnn
 // Read nnn_nnnn plus 1 registers beginning at address a_aaaa_a
-// Response: dddd_dddd_dddd_dddd IF n==0
+// Response: dddd_dddd_dddd_dddd IF n==0, i.e. response is just the data at that register
 // Response: 111a_aaaa_ammm_mmmm IF n>0, followed by the n+1 register data words
 #define ADS131M04_CMD_RREG(a)    (0xA000u | (((uint16_t)(a) & 0x3Fu) << 7))
 // WREG: 011a_aaaa_annn_nnnn
@@ -91,6 +91,8 @@ extern "C" {
 #define ADS131M04_MODE_DRDY_SEL_MASK 0x000Cu    // bits[3:2]: 00b=most lagging enabled channel, 01b=logic OR of all enabled channels, 10b=11b=most leading enabled channel, reset value 00b
 #define ADS131M04_MODE_DRDY_HiZ      (1u << 1)  // DRDY when data not ready: 0b=logic high, 1b=Hi-Z, reset value 0b
 #define ADS131M04_MODE_DRDY_FMT      (1u << 0)  // DRDY when data is ready: 0b=logic low, 1b=low pulse, reset value 0b
+// Value written by ADS131M04_Init(): all reset defaults except the reset
+#define ADS131M04_MODE_INIT (ADS131M04_MODE_WLENGTH_24BIT | ADS131M04_MODE_TIMEOUT) // 0x0110
 
 /* ******************************** */
 /* CLOCK register bits (Table 8-17) */
@@ -98,9 +100,30 @@ extern "C" {
 #define ADS131M04_CLOCK_CHn_EN(ch)  (1u << (8u + (ch))) // 0b=disabled, 1b=enabled, reset value 1b for all four channels
 #define ADS131M04_CLOCK_CH_EN_MASK  0x0F00u
 #define ADS131M04_CLOCK_TBM         (1u << 5) // 0b=OSR set by OSR[2:0], 1b=OSR of 64
-#define ADS131M04_OSR_MASK          (0x001Cu) // bits[4:2]: 000b=128, 001b=256, 010b=512, 011b=1024, 100b=2048, 101b=4096, 110b=8192, 111b=16256, reset value 011b
+#define ADS131M04_OSR_MASK          (0x001Cu) // bits[4:2]: see ADS131M04_osr_t, reset value 011b
 #define ADS131M04_CLOCK_OSR_SHIFT   2u
-#define ADS131M04_PWR_MASK          0x0003u // bits[1:0]: 00b=very low power, 01b=low power, 10b=high resolution, 11b=high resolution, reset value 10b
+#define ADS131M04_PWR_MASK          0x0003u // bits[1:0]: see ADS131M04_power_t, reset value 10b
+
+// CLOCK.PWR[1:0]. Max f_CLKIN: VLP 2.048 MHz, LP 4.096 MHz, HR 8.192 MHz.
+// With 2.048 MHz clock, VLP is the only legal mode.
+typedef enum{
+	ADS131M04_PWR_VLP = 0u, // very low power; f_MOD = f_CLKIN / 2
+	ADS131M04_PWR_LP  = 1u, // low power
+	ADS131M04_PWR_HR  = 2u  // high resultion (default)
+} ADS131M04_power_t;
+
+// CLOCK.OSR[2:0]. f_DATA = f_CLKIN / 2 / OSR.
+// At f_CLKIN = 2.048 MHz: OSR 4096 -> 250 SPS
+typedef enum {
+	ADS131M04_OSR_128   = 0u,
+	ADS131M04_OSR_256   = 1u,
+	ADS131M04_OSR_512   = 2u,
+	ADS131M04_OSR_1024  = 3u, // default on reset
+	ADS131M04_OSR_2048  = 4u,
+	ADS131M04_OSR_4096  = 5u, // 250 SPS @ 2.048 MHz
+	ADS131M04_OSR_8192  = 6u,
+	ADS131M04_OSR_16256 = 7u  // not 16384 as you might expect
+} ADS131M04_osr_t;
 
 /* ******************************** */
 /* GAIN1 register bits (Table 8-18) */
@@ -109,6 +132,17 @@ extern "C" {
 // Gain=2^code, reset value 0x0000 (Gain=1)
 #define ADS131M04_GAIN1_PGAGAIN_SHIFT(ch) (4u * (ch))
 #define ADS131M04_GAIN1_PGAGAIN_MASK(ch) (0x7u << ADS131M04_GAIN1_PGAGAIN_SHIFT(ch))
+
+typedef enum {
+	ADS131M04_GAIN_1 = 0u, 
+	ADS131M04_GAIN_2,
+	ADS131M04_GAIN_4,
+	ADS131M04_GAIN_8,
+	ADS131M04_GAIN_16,
+	ADS131M04_GAIN_32,
+	ADS131M04_GAIN_64,
+	ADS131M04_GAIN_128
+} ADS131M04_gain_t;
 
 /* ****************************** */
 /* CFG register bits (Table 8-19) */
@@ -135,6 +169,14 @@ extern "C" {
 #define ADS131M04_CHn_CFG_PHASE_MASK 0xFFC0u   // bits[15:6], phase delay in modulator clocks
 #define ADS131M04_CHn_CFG_DCBLK_DIS  (1u << 2) // 1b=controlled by DCBLOCK[3:0], 1b=disabled
 #define ADS131M04_CHn_MUX_MASK       0x0003u   // bits[1:0]
+
+// CHn_CFG.MUX[1:0]: what the ADC actually digitizes for CHn
+typedef enum {
+	ADS131M04_MUX_INPUT     = 0u, // AINxP/AINxN pins, default on reset
+	ADS131M04_MUX_SHORTED   = 1u, // ADC inputs shorted internally
+	ADS131M04_MUX_TEST_POS  = 2u, // positive DC test signal
+	ADS131M04_MUX_TEST_NEG  = 3u  // negative DC test signal
+} ADS131M04_mux_t;
 
 /* ********************************************** */
 /* CHn_OCAL_MSB register bits (Table 8-24..27+(ch*7)) */
