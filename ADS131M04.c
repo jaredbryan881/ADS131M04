@@ -113,3 +113,28 @@ ADS131M04_err_t ADS131M04_write_reg_verify(uint8_t addr, uint16_t val)
 	if ((e = ADS131M04_read_reg(addr, &rb))  != ADS131M04_OK) return e;
 	return (rb == val) ? ADS131M04_OK : ADS131M04_ERR_VERIFY;
 }
+
+/* ************** */
+/* Initialization */
+/* ************** */
+ADS131M04_err_t ADS131M04_init(uint32_t f_clkin_hz)
+{
+	uint16_t id;
+	ADS131M04_err_t e;
+
+	if (f_clkin_hz == 0u)
+		return ADS131M04_ERR_PARAM;
+	s_f_clkin_hz = f_clkin_hz;
+
+	if ((e = ADS131M04_reset()) != ADS131M04_OK)
+		return e;
+
+	// Check that channel count is 4 as expected just to test the SPI link
+	if ((e = ads131m04_read_reg(ADS131M04_REG_ID, &id)) != ADS131M04_OK)
+		return e;
+	if (((id >> 8) & 0x0Fu) != ADS131M04_NUM_CHANNELS)
+		return ADS131M04_ERR_BAD_ID;
+
+	// Clear RESET bit in the STATUS register
+	return ADS131M04_write_reg_verify(ADS131M04_REG_MODE, ADS131M04_MODE_INIT);
+}

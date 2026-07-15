@@ -211,8 +211,11 @@ typedef struct {
 /* ************ */
 /* Driver: API  */
 /* ************ */
-// Reset via SYNC/RESET pin, confirm response is 0xFF24 and CHANCNT==4,
+// Reset via SYNC/RESET pin, confirm response is 0xFF24 and CHANCNT == 4,
 // then write MODE = ADS131M04_MODE_INIT (return to defaults and clear the reset flag)
+ADS131M04_err_t ADS131M04_init(uint32_t f_clkin_hz);
+
+// Reset via SYNC/RESET pin, confirm response is 0xFF24
 ADS131M04_err_t ADS131M04_reset(void);
 
 // Single-register access
