@@ -10,6 +10,23 @@ static uint16_t s_last_response;
 
 uint16_t ads131m04_last_response(void) { return s_last_response; }
 
+/* ***************** */
+/* ANSI CRC (CRC-16) */
+/* ***************** */
+static uint16_t crc16(const uint8_t *p, uint32_t n)
+{
+	// running remainder of the division
+	uint16_t crc = 0xFFFFu;
+	while (n--) {
+		// Bring the message byte into the top half of the 16-bit working register
+		crc ^= (uint16_t)(*p++) << 8;
+		// perform the division
+		for (unsigned i = 0; i < 8; ++i)
+			crc = (crc & 0x8000u) ? (uint16_t)((crc << 1) ^ 0x1021u) : (uint16_t)(crc << 1);
+	}
+	return crc;
+}
+
 /* ********** */
 /* Primitives */
 /* ********** */
