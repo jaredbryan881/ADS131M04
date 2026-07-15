@@ -244,6 +244,9 @@ ads131m04_err_t ads131m04_read_data(ads131m04_data_t *out);
 // Poll DRDY bit of STATUS register
 ADS131M04_err_t ADS131M04_data_ready(bool *ready);
 
+// Get the first word of the most recent frame
+uint16_t ADS131M04_last_response(void);
+
 #ifdef __cplusplus
 }
 #endif
