@@ -168,7 +168,7 @@ typedef enum {
 /* ***************************************** */
 #define ADS131M04_CHn_CFG_PHASE_MASK 0xFFC0u   // bits[15:6], phase delay in modulator clocks
 #define ADS131M04_CHn_CFG_DCBLK_DIS  (1u << 2) // 1b=controlled by DCBLOCK[3:0], 1b=disabled
-#define ADS131M04_CHn_MUX_MASK       0x0003u   // bits[1:0]
+#define ADS131M04_CHn_CFG_MUX_MASK   0x0003u   // bits[1:0]
 
 // CHn_CFG.MUX[1:0]: what the ADC actually digitizes for CHn
 typedef enum {

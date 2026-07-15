@@ -138,3 +138,46 @@ ADS131M04_err_t ADS131M04_init(uint32_t f_clkin_hz)
 	// Clear RESET bit in the STATUS register
 	return ADS131M04_write_reg_verify(ADS131M04_REG_MODE, ADS131M04_MODE_INIT);
 }
+
+/* ************* */
+/* Configuration */
+/* ************* */
+ADS131M04_err_t ADS131M04_configure_clock(uint8_t ch_en_mask, ADS131M04_osr_t osr, ADS131M04_power_t pwr)
+{
+	if (ch_en_mask > 0x0Fu || (uint8_t)osr > 7u || (uint8_t)pwr > 2u)
+		return ADS131M04_ERR_PARAM;
+
+	// CLOCK register (Table 8-17): CH_EN[11:8] | TBM=0 | OSR[4:2] | PWR[1:0]
+	uint16_t clock = (uint16_t)(((uint16_t)ch_en_mask << 8) | ((uint16_t)osr << ADS131M04_CLOCK_OSR_SHIFT) | (uint16_t)pwr);
+	return ADS131M04_write_reg_verify(ADS131M04_REG_CLOCK, clock);
+}
+
+ADS131M04_err_t ADS131M04_set_gain(uint8_t channel, ADS131M04_gain_t gain)
+{
+	uint16_t g;
+	ADS131M04_err_t e;
+
+	if (channel >= ADS131M04_NUM_CHANNELS || (uint8_t)gain > 7u)
+		return ADS131M04_ERR_PARAM;
+
+	// GAIN1 register: PGAGAIN0 in bits [2:0], PGAGAIN1 in bits [6:4] and so on
+	if ((e = ADS131M04_read_reg(ADS131M04_REG_GAIN1, &g)) != ADS131M04_OK)
+		return e;
+	g = (uint16_t)((g & ~ADS131M04_GAIN1_PGAGAIN_MASK(channel)) | ((uint16_t)gain << ADS131M04_GAIN1_PGAGAIN_SHIFT(channel)));
+	return ADS131M04_write_reg_verify(ADS131M04_REG_GAIN1, g);
+}
+
+ADS131M04_err_t ADS131M04_set_mux(uint8_t channel, ADS131M04_mux_t mux)
+{
+	uint16_t cfg;
+	ADS131M04_err_t e;
+
+	if (channel >= ADS131M04_NUM_CHANNELS || (uint8_t)mux > 3u)
+		return ADS131M04_ERR_PARAM;
+
+	// CHn_CFG register MUXn[1:0] bits
+	if ((e = ADS131M04_read_reg(ADS131M04_REG_CHn_CFG(channel), &cfg)) != ADS131M04_OK)
+		return e;
+	cfg = (uint16_t)((cfg & ~ADS131M04_CHn_CFG_MUX_MASK) | (uint16_t)mux);
+	return ADS131M04_write_reg_verify(ADS131M04_REG_CHn_CFG(channel), cfg);
+}
