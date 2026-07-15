@@ -181,3 +181,51 @@ ADS131M04_err_t ADS131M04_set_mux(uint8_t channel, ADS131M04_mux_t mux)
 	cfg = (uint16_t)((cfg & ~ADS131M04_CHn_CFG_MUX_MASK) | (uint16_t)mux);
 	return ADS131M04_write_reg_verify(ADS131M04_REG_CHn_CFG(channel), cfg);
 }
+
+/* *************** */
+/* Data conversion */
+/* *************** */
+void ADS131M04_parse_frame(const uint8_t rx[ADS131M04_FRAME_BYTES], ADS131M04_data_t *out)
+{
+	out->status = (uint16_t)((rx[0] << 8) | rx[1]);
+
+	for (uint32_t ch = 0; ch < ADS131M04_NUM_CHANNELS; ++ch) {
+		const uint8_t *w = &rx[(ch + 1u) * ADS131M04_WORD_BYTES];
+		uint32_t raw = ((uint32_t)w[0] << 16) | ((uint32_t)w[1] << 8) | w[2];
+		// sign-extend 24-bit to 32-bit
+		out->ch[ch] = (int32_t)(raw << 8) >> 8;
+	}
+
+	// CRC is found over words 0-4, MSB-aligned in word 5
+	uint16_t dev_crc = (uint16_t)((rx[15] << 8) | rx[16]);
+	out->crc_ok = (crc16(rx, 15u) == dev_crc);
+}
+
+ADS131M04_err_t ADS131M04_read_data(ADS131M04_data_t *out)
+{
+	uint8_t rx[ADS131M04_FRAME_BYTES];
+	ADS131M04_err_t e;
+
+	if (!out)
+		return ADS131M04_ERR_PARAM;
+
+	if ((e = exchange_frame(ADS131M04_CMD_NULL, 0, rx)) != ADS131M04_OK)
+		return e;
+
+	ADS131M04_parse_frame(rx, out);
+	return ADS131M04_OK;
+}
+
+ADS131M04_err_t ADS131M04_data_ready(bool *ready)
+{
+	uint16_t status;
+	ADS131M04_err_t e;
+
+	if (!ready)
+		return ADS131M04_ERR_PARAM;
+
+	if ((e = ADS131M04_read_reg(ADS131M04_REG_STATUS, &status)) != ADS131M04_OK)
+		return e;
+	*ready = (status & ADS131M04_STATUS_DRDY_MASK) != 0u;
+	return ADS131M04_OK;
+}

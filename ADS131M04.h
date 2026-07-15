@@ -226,6 +226,24 @@ ADS131M04_err_t ADS131M04_write_reg(uint8_t addr, uint16_t val);
 // write_reg_verify also reads the register back and compares
 ADS131M04_err_t ADS131M04_write_reg_verify(uint8_t addr, uint16_t val);
 
+// Set the CLOCK register: channel enables, OSR, power mode
+ADS131M04_err_t ADS131M04_configure_clock(uint8_t ch_en_mask, ADS131M04_osr_t osr, ADS131M04_power_t pwr);
+
+// Program one channel's PGA gain
+ADS131M04_err_t ADS131M04_set_gain(uint8_t channel, ADS131M04_gain_t gain);
+
+// Set a channel's input mux
+ADS131M04_err_t ADS131M04_set_mux(uint8_t channel, ADS131M04_mux_t mux);
+
+// Unpack an 18-byte frame
+void ADS131M04_parse_frame(const uint8_t rx[ADS131M04_FRAME_BYTES], ADS131M04_data_t *out);
+
+// Exchange one NULL frame and parse it (blocking read)
+ads131m04_err_t ads131m04_read_data(ads131m04_data_t *out);
+
+// Poll DRDY bit of STATUS register
+ADS131M04_err_t ADS131M04_data_ready(bool *ready);
+
 #ifdef __cplusplus
 }
 #endif
