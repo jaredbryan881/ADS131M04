@@ -239,7 +239,7 @@ ADS131M04_err_t ADS131M04_set_mux(uint8_t channel, ADS131M04_mux_t mux);
 void ADS131M04_parse_frame(const uint8_t rx[ADS131M04_FRAME_BYTES], ADS131M04_data_t *out);
 
 // Exchange one NULL frame and parse it (blocking read)
-ads131m04_err_t ads131m04_read_data(ads131m04_data_t *out);
+ADS131M04_err_t ADS131M04_read_data(ADS131M04_data_t *out);
 
 // Poll DRDY bit of STATUS register
 ADS131M04_err_t ADS131M04_data_ready(bool *ready);

@@ -8,7 +8,7 @@
 static uint32_t s_f_clkin_hz = 2048000u;
 static uint16_t s_last_response;
 
-uint16_t ads131m04_last_response(void) { return s_last_response; }
+uint16_t ADS131M04_last_response(void) { return s_last_response; }
 
 /* ***************** */
 /* ANSI CRC (CRC-16) */
@@ -124,7 +124,7 @@ ADS131M04_err_t ADS1341M04_write_reg(uint8_t addr, uint16_t val)
 ADS131M04_err_t ADS131M04_write_reg_verify(uint8_t addr, uint16_t val)
 {
 	uint16_t rb;
-	ads131m04_err_t e;
+	ADS131M04_err_t e;
 
 	if ((e = ADS131M04_write_reg(addr, val)) != ADS131M04_OK) return e;
 	if ((e = ADS131M04_read_reg(addr, &rb))  != ADS131M04_OK) return e;
