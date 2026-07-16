@@ -1,4 +1,5 @@
 #include "ADS131M04.h"
+#include "ADS131M04_port.h"
 
 // Timing constants (datasheet section 6.6/6.7)
 #define T_RESET_CLKS   2048u
@@ -85,7 +86,7 @@ ADS131M04_err_t ADS131M04_reset(void)
 /* *************** */
 /* Register access */
 /* *************** */
-ADS131M04_err_t ADS1341M04_read_reg(uint8_t addr, uint16_t *val)
+ADS131M04_err_t ADS131M04_read_reg(uint8_t addr, uint16_t *val)
 {
 	uint8_t rx[ADS131M04_FRAME_BYTES];
 	ADS131M04_err_t e;
@@ -103,7 +104,7 @@ ADS131M04_err_t ADS1341M04_read_reg(uint8_t addr, uint16_t *val)
 	return ADS131M04_OK;
 }
 
-ADS131M04_err_t ADS1341M04_write_reg(uint8_t addr, uint16_t val)
+ADS131M04_err_t ADS131M04_write_reg(uint8_t addr, uint16_t val)
 {
 	uint8_t rx[ADS131M04_FRAME_BYTES];
 	ADS131M04_err_t e;
