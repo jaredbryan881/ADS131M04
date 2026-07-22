@@ -127,7 +127,8 @@ ADS131M04_err_t ADS131M04_write_reg_verify(uint8_t addr, uint16_t val)
 	uint16_t rb;
 	ADS131M04_err_t e;
 
-	if ((e = ADS131M04_write_reg(addr, val)) != ADS131M04_OK) return e;
+	e = ADS131M04_write_reg(addr, val);
+	if (e != ADS131M04_OK && e != ADS131M04_ERR_VERIFY) return e;
 	if ((e = ADS131M04_read_reg(addr, &rb))  != ADS131M04_OK) return e;
 	return (rb == val) ? ADS131M04_OK : ADS131M04_ERR_VERIFY;
 }
